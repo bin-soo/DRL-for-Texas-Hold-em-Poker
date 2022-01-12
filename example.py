@@ -93,7 +93,7 @@ for i in range(epoch2):
             wins += 1
         if chips[1] < minc:
             minc = chips[1]
-winRate.append(wins / (epoch1 - threshold))
+winRate.append(wins / (epoch2 - threshold))
 chipsAll.append(chips)
 minChip.append(minc)
 print('win rate of the bagent training: ',winRate[1])
@@ -129,7 +129,7 @@ for i in range(epoch3):    #num_epoch = 1e5.
     if i%10000==0:
         torch.save(state_dic, 'd3qn02.pth.tar')
 
-winRate.append(wins/epoch2)
+winRate.append(wins/epoch3)
 chipsAll.append(chips)
 minChip.append(minc)
 print('win rate of the second training: ',winRate[2])
