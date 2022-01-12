@@ -21,6 +21,15 @@ chipsAll = []
 winRate = []
 minChip = []
 
+state_dic = {'q_net':d3qn_agent.q_network.state_dict(),
+             'target_net': d3qn_agent.target_network.state_dict(),
+             'q_optimizer': d3qn_agent.q_network.optimizer.state_dict(),
+             'target_optimizer': d3qn_agent.target_network.optimizer.state_dict(),
+             'memory': d3qn_agent.memory.memory,
+             'prob': d3qn_agent.memory.prob,
+             'lr': d3qn_agent.memory.lr,
+             'counter': d3qn_agent.memory.counter}
+
 #training part 1: against Random Agent.
 env.set_agents([random_agent,d3qn_agent])
 
@@ -55,6 +64,8 @@ for i in range(epoch1):    #num_epoch = 1e5, which could be ungraded.
         wins += 1
     if chips[1]<minc:
         minc = chips[1]
+    if i%10000==0:
+        torch.save(state_dic, 'd3qn02.pth.tar')
 
 winRate.append(wins/epoch1)
 chipsAll.append(chips)
@@ -71,7 +82,7 @@ wins = 0
 minc = 1e9
 threshold = 1e4
 
-for i in range(epoch1):
+for i in range(epoch2):
     print(f"\rtrain epoch of part 2:", i, "chips:", chips, end="")
     trajectories, player_wins = env.run(is_training=False)
     b_agent.memory.save(env.get_state(1), player_wins[1])
@@ -95,7 +106,7 @@ chips = [0,0]
 wins = 0
 minc = 1e9
 
-for i in range(epoch2):    #num_epoch = 1e6.
+for i in range(epoch3):    #num_epoch = 1e5.
     print(f"\rtrain epoch of part 3:", i , "chips:", chips ,end="")
     trajectories, payoffs = env.run(is_training=True)
     chips[0] += payoffs[0]
@@ -115,6 +126,8 @@ for i in range(epoch2):    #num_epoch = 1e6.
         wins += 1
     if chips[1]<minc:
         minc = chips[1]
+    if i%10000==0:
+        torch.save(state_dic, 'd3qn02.pth.tar')
 
 winRate.append(wins/epoch2)
 chipsAll.append(chips)
@@ -126,14 +139,7 @@ print('min chip of the second training: ',minChip[2])
 
 
 
-state_dic = {'q_net':d3qn_agent.q_network.state_dict(),
-             'target_net': d3qn_agent.target_network.state_dict(),
-             'q_optimizer': d3qn_agent.q_network.optimizer.state_dict(),
-             'target_optimizer': d3qn_agent.target_network.optimizer.state_dict(),
-             'memory': d3qn_agent.memory.memory,
-             'prob': d3qn_agent.memory.prob,
-             'lr': d3qn_agent.memory.lr,
-             'counter': d3qn_agent.memory.counter}
+
 
 torch.save(state_dic, 'd3qn02.pth.tar')
 
