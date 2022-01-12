@@ -119,9 +119,9 @@ for i in range(epoch2):    #num_epoch = 1e6.
 winRate.append(wins/epoch2)
 chipsAll.append(chips)
 minChip.append(minc)
-print('win rate of the second training: ',winRate[1])
+print('win rate of the second training: ',winRate[2])
 print('chips up to the second training: ',chips)
-print('min chip of the second training: ',minChip[1])
+print('min chip of the second training: ',minChip[2])
 
 
 
