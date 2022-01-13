@@ -8,27 +8,45 @@ from d3qn_agent import D3QNAgent
 from bayes_agent import BAgent
 import torch
 
-checkpoint = torch.load("d3qn02.pth.tar")
-d3qn_agent = D3QNAgent(epsilon_start=0,epsilon_end=0)
-d3qn_agent.q_network.load_state_dict(checkpoint['q_net'])
-d3qn_agent.target_network.load_state_dict(checkpoint['target_net'])
-d3qn_agent.q_network.optimizer.load_state_dict(checkpoint['q_optimizer'])
-d3qn_agent.target_network.optimizer.load_state_dict(checkpoint['target_optimizer'])
-d3qn_agent.memory.memory=checkpoint['memory']
-d3qn_agent.memory.prob=checkpoint['prob']
-d3qn_agent.memory.lr=checkpoint['lr']
-d3qn_agent.memory.counter=checkpoint['counter']
 
 # Make environment
 # Set 'record_action' to True because we need it to print results
 env = rlcard.make('no-limit-holdem', config={'record_action': True})
 human_agent = HumanAgent(env.num_actions)
-#cfr_agent = models.load('no-limit-holdem-cfr').agents[0]
-#d3qn_agent = D3QNAgent()
-env.set_agents([human_agent, d3qn_agent])
+
 
 print(">> No Limit Hold'em pre-trained model")
 
+choose=input("Which agent do you want to play with? Input d3qn/bayes to choose: ")
+invalid=True
+while(invalid):
+    if choose=='d3qn':
+        checkpoint = torch.load("d3qn03.pth.tar")
+        d3qn_agent = D3QNAgent(epsilon_start=0, epsilon_end=0)
+        d3qn_agent.q_network.load_state_dict(checkpoint['q_net'])
+        d3qn_agent.target_network.load_state_dict(checkpoint['target_net'])
+        d3qn_agent.q_network.optimizer.load_state_dict(checkpoint['q_optimizer'])
+        d3qn_agent.target_network.optimizer.load_state_dict(checkpoint['target_optimizer'])
+        d3qn_agent.memory.memory = checkpoint['memory']
+        d3qn_agent.memory.prob = checkpoint['prob']
+        d3qn_agent.memory.lr = checkpoint['lr']
+        d3qn_agent.memory.counter = checkpoint['counter']
+        env.set_agents([human_agent, d3qn_agent])
+        invalid=False
+    elif choose=='bayes':
+        checkpoint = torch.load("d3qn03.pth.tar")
+        b_agent = BAgent(num_actions=env.num_actions)
+        b_agent.memory.wincount=checkpoint['BA_wincount']
+        b_agent.memory.losecount=checkpoint['BA_losecount']
+        b_agent.memory.win=checkpoint['BA_win']
+        b_agent.memory.lose=checkpoint['BA_lose']
+        b_agent.count=checkpoint['BA_count']
+        env.set_agents([human_agent, b_agent])
+        invalid=False
+    else:
+        choose = input("Please type d3qn or bayes to choose an agent: ")
+
+totalRecord=0
 while (True):
     print(">> Start a new game")
 
@@ -51,12 +69,18 @@ while (True):
     print_card(env.get_perfect_information()['hand_cards'][1])
 
     print('===============     Result     ===============')
+    totalRecord+=payoffs[0]
     if payoffs[0] > 0:
         print('You win {} chips!'.format(payoffs[0]))
     elif payoffs[0] == 0:
         print('It is a tie.')
     else:
         print('You lose {} chips!'.format(-payoffs[0]))
-    print('')
 
+    if totalRecord >= 0:
+        print('You have won {} chips from beginning!'.format(totalRecord))
+    else:
+        print('You have lost {} chips from beginning!'.format(-totalRecord))
+
+    print('')
     input("Press any key to continue...")
