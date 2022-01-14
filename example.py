@@ -3,14 +3,14 @@ import torch
 from rlcard.agents import RandomAgent
 from dqn_card import DQNAgent
 from nfsp_card import NFSPAgent
-from d3qn_agent2 import D3QNAgent
+from d3qn_agent import D3QNAgent
 from bayes_agent import BAgent
 '''
 every time you want to run this file, please rewrite the name of the path 
 to make sure you have save every model instead of overwritting.
 '''
-path = 'd3qn03.pth.tar'     #next time you run this file, you can change path to 'd3qn04.pth.tar' for example.
-
+path1 = 'd3qn001.pth.tar'     #next time you run this file, you can change path to 'd3qn04.pth.tar' for example.
+path2 = 'NB001.pth.tar'
 env = rlcard.make('no-limit-holdem')
 d3qn_agent = D3QNAgent()
 b_agent = BAgent(num_actions=env.num_actions)
@@ -24,20 +24,25 @@ epoch3 = int(1e5)
 chipsAll = []
 winRate = []
 minChip = []
+def save_dqndic(q_net, target_net, q_optimizer, target_optimizer, memory, prob, lr, counter):
+    state_dic = {'q_net':q_net,
+                 'target_net': target_net,
+                 'q_optimizer': q_optimizer,
+                 'target_optimizer': target_optimizer,
+                 'memory': memory,
+                 'prob': prob,
+                 'lr': lr,
+                 'counter': counter
+                 }
+    return state_dic
 
-state_dic = {'q_net':d3qn_agent.q_network.state_dict(),
-             'target_net': d3qn_agent.target_network.state_dict(),
-             'q_optimizer': d3qn_agent.q_network.optimizer.state_dict(),
-             'target_optimizer': d3qn_agent.target_network.optimizer.state_dict(),
-             'memory': d3qn_agent.memory.memory,
-             'prob': d3qn_agent.memory.prob,
-             'lr': d3qn_agent.memory.lr,
-             'counter': d3qn_agent.memory.counter,
-             'BA_wincount':b_agent.memory.wincount,
-             'BA_losecount':b_agent.memory.losecount,
-             'BA_win':b_agent.memory.win,
-             'BA_lose':b_agent.memory.lose,
-             'BA_count':b_agent.count}
+def save_NBdic(BA_wincount, BA_losecount, BA_win, BA_lose, BA_count):
+    state_dic = {'BA_wincount':BA_wincount,
+                 'BA_losecount':BA_losecount,
+                 'BA_win':BA_win,
+                 'BA_lose':BA_lose,
+                 'BA_count':BA_count}
+    return state_dic
 
 #training period 1: against Random Agent.
 env.set_agents([random_agent,d3qn_agent])
@@ -74,7 +79,15 @@ for i in range(epoch1):    #num_epoch = 1e5, which could be ungraded.
     if chips[1]<minc:
         minc = chips[1]
     if i%10000==0:
-        torch.save(state_dic, path)
+        state_dic = save_dqndic(d3qn_agent.q_network.state_dict(),
+                 d3qn_agent.target_network.state_dict(),
+                 d3qn_agent.q_network.optimizer.state_dict(),
+                 d3qn_agent.target_network.optimizer.state_dict(),
+                 d3qn_agent.memory.memory,
+                 d3qn_agent.memory.prob,
+                 d3qn_agent.memory.lr,
+                 d3qn_agent.memory.counter)
+        torch.save(state_dic, path1)
 
 winRate.append(wins/epoch1)
 chipsAll.append(chips)
@@ -106,7 +119,12 @@ for i in range(epoch2):
         if chips[1] < minc:
             minc = chips[1]
     if i%10000==0:
-        torch.save(state_dic, path)
+        state_dic = save_NBdic(b_agent.memory.wincount,
+                 b_agent.memory.losecount,
+                 b_agent.memory.win,
+                 b_agent.memory.lose,
+                 b_agent.count)
+        torch.save(state_dic, path2)
 
 winRate.append(wins / (epoch2 - threshold))
 chipsAll.append(chips)
@@ -114,46 +132,51 @@ minChip.append(minc)
 print('win rate of the bagent training: ',winRate[1])
 print('chips up to the bagent training: ',chips)
 print('min chip of the bagent training: ',minChip[1])
+#
+# #training period 3: against BAgent.
+# env.set_agents([b_agent,d3qn_agent])
+# chips = [0,0]
+# wins = 0
+# minc = 1e9
+#
+# for i in range(epoch3):    #num_epoch = 1e5.
+#     print(f"\rtrain epoch of part 3:", i , "chips:", chips ,end="")
+#     trajectories, payoffs = env.run(is_training=True)
+#     chips[0] += payoffs[0]
+#     chips[1] += payoffs[1]
+#     for j in range(len(trajectories)):
+#         if j == 1:  #select our D3QN Agent.
+#             for k in range(len(trajectories[j]) // 2):#store memory for each epoch.
+#                 state = trajectories[j][2*k]
+#                 action = trajectories[j][2*k + 1]
+#                 next_state = trajectories[j][2*k + 2]
+#                 reward = payoffs[1] if env.is_over is True else 0
+#                 #print(next_state)
+#                 d3qn_agent.feed(state, action, reward, next_state, env.is_over())
+#             if i > 100 and i%5==0:  #sample memory.
+#                 d3qn_agent.train()
+#     if payoffs[1]>0:
+#         wins += 1
+#     if chips[1]<minc:
+#         minc = chips[1]
+#     if i%10000==0:
+#         state_dic = save_NBdic(b_agent.memory.wincount,
+#                  b_agent.memory.losecount,
+#                  b_agent.memory.win,
+#                  b_agent.memory.lose,
+#                  b_agent.count)
+#         torch.save(state_dic, path2)
+#
+# winRate.append(wins/epoch3)
+# chipsAll.append(chips)
+# minChip.append(minc)
+# print('win rate of the second training: ',winRate[2])
+# print('chips up to the second training: ',chips)
+# print('min chip of the second training: ',minChip[2])
 
-#training period 3: against BAgent.
-env.set_agents([b_agent,d3qn_agent])
-chips = [0,0]
-wins = 0
-minc = 1e9
-
-for i in range(epoch3):    #num_epoch = 1e5.
-    print(f"\rtrain epoch of part 3:", i , "chips:", chips ,end="")
-    trajectories, payoffs = env.run(is_training=True)
-    chips[0] += payoffs[0]
-    chips[1] += payoffs[1]
-    for j in range(len(trajectories)):
-        if j == 1:  #select our D3QN Agent.
-            for k in range(len(trajectories[j]) // 2):#store memory for each epoch.
-                state = trajectories[j][2*k]
-                action = trajectories[j][2*k + 1]
-                next_state = trajectories[j][2*k + 2]
-                reward = payoffs[1] if env.is_over is True else 0
-                #print(next_state)
-                d3qn_agent.feed(state, action, reward, next_state, env.is_over())
-            if i > 100 and i%5==0:  #sample memory.
-                d3qn_agent.train()
-    if payoffs[1]>0:
-        wins += 1
-    if chips[1]<minc:
-        minc = chips[1]
-    if i%10000==0:
-        torch.save(state_dic, path)
-
-winRate.append(wins/epoch3)
-chipsAll.append(chips)
-minChip.append(minc)
-print('win rate of the second training: ',winRate[2])
-print('chips up to the second training: ',chips)
-print('min chip of the second training: ',minChip[2])
 
 
 
-
-torch.save(state_dic, path)
+#torch.save(state_dic, path)
 
 #print(agentnfsp.show_memory())
