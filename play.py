@@ -21,7 +21,7 @@ choose=input("Which agent do you want to play with? Input d3qn/bayes to choose: 
 invalid=True
 while(invalid):
     if choose=='d3qn':
-        checkpoint = torch.load("d3qn03.pth.tar")
+        checkpoint = torch.load("d3qn001zg2.pth.tar")
         d3qn_agent = D3QNAgent(epsilon_start=0, epsilon_end=0)
         d3qn_agent.q_network.load_state_dict(checkpoint['q_net'])
         d3qn_agent.target_network.load_state_dict(checkpoint['target_net'])
@@ -32,9 +32,12 @@ while(invalid):
         d3qn_agent.memory.lr = checkpoint['lr']
         d3qn_agent.memory.counter = checkpoint['counter']
         env.set_agents([human_agent, d3qn_agent])
+        choose='D3QN'
         invalid=False
     elif choose=='bayes':
-        checkpoint = torch.load("d3qn03.pth.tar")
+
+
+        checkpoint = torch.load("NB001zg2.pth.tar")
         b_agent = BAgent(num_actions=env.num_actions)
         b_agent.memory.wincount=checkpoint['BA_wincount']
         b_agent.memory.losecount=checkpoint['BA_losecount']
@@ -43,6 +46,7 @@ while(invalid):
         b_agent.count=checkpoint['BA_count']
         env.set_agents([human_agent, b_agent])
         invalid=False
+        choose='Bayes'
     else:
         choose = input("Please type d3qn or bayes to choose an agent: ")
 
@@ -65,10 +69,12 @@ while (True):
         print('>> Player', pair[0], 'chooses', pair[1])
 
     # Let's take a look at what the agent card is
-    print('===============     D3QN Agent    ===============')
+    print('===============     '+choose+' Agent    ===============')
     print_card(env.get_perfect_information()['hand_cards'][1])
 
     print('===============     Result     ===============')
+
+    print_card(env.get_perfect_information()['public_card'])
     totalRecord+=payoffs[0]
     if payoffs[0] > 0:
         print('You win {} chips!'.format(payoffs[0]))
